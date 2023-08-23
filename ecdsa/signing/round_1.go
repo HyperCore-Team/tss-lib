@@ -11,12 +11,12 @@ import (
 	"fmt"
 	"math/big"
 
-	"github.com/binance-chain/tss-lib/common"
-	"github.com/binance-chain/tss-lib/crypto"
-	"github.com/binance-chain/tss-lib/crypto/commitments"
-	"github.com/binance-chain/tss-lib/crypto/mta"
-	"github.com/binance-chain/tss-lib/ecdsa/keygen"
-	"github.com/binance-chain/tss-lib/tss"
+	"github.com/HyperCore-Team/tss-lib/common"
+	"github.com/HyperCore-Team/tss-lib/crypto"
+	"github.com/HyperCore-Team/tss-lib/crypto/commitments"
+	"github.com/HyperCore-Team/tss-lib/crypto/mta"
+	"github.com/HyperCore-Team/tss-lib/ecdsa/keygen"
+	"github.com/HyperCore-Team/tss-lib/tss"
 )
 
 var (
@@ -45,6 +45,12 @@ func (round *round1) Start() *tss.Error {
 	round.number = 1
 	round.started = true
 	round.resetOK()
+	round.temp.ssidNonce = new(big.Int).SetUint64(0)
+	ssid, err := round.getSSID()
+	if err != nil {
+		return round.WrapError(err)
+	}
+	round.temp.ssid = ssid
 
 	k := common.GetRandomPositiveInt(round.Params().EC().Params().N)
 	gamma := common.GetRandomPositiveInt(round.Params().EC().Params().N)
@@ -120,6 +126,15 @@ func (round *round1) prepare() error {
 	xi := round.key.Xi
 	ks := round.key.Ks
 	bigXs := round.key.BigXj
+
+	if round.temp.keyDerivationDelta != nil {
+		// adding the key derivation delta to the xi's
+		// Suppose x has shamir shares x_0,     x_1,     ..., x_n
+		// So x + D has shamir shares  x_0 + D, x_1 + D, ..., x_n + D
+		mod := common.ModInt(round.Params().EC().Params().N)
+		xi = mod.Add(round.temp.keyDerivationDelta, xi)
+		round.key.Xi = xi
+	}
 
 	if round.Threshold()+1 > len(ks) {
 		return fmt.Errorf("t+1=%d is not satisfied by the key count of %d", round.Threshold()+1, len(ks))

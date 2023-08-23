@@ -9,12 +9,13 @@ package signing
 import (
 	"errors"
 	"fmt"
+	"math/big"
 
-	"github.com/binance-chain/tss-lib/common"
-	"github.com/binance-chain/tss-lib/crypto"
-	"github.com/binance-chain/tss-lib/crypto/commitments"
-	"github.com/binance-chain/tss-lib/eddsa/keygen"
-	"github.com/binance-chain/tss-lib/tss"
+	"github.com/HyperCore-Team/tss-lib/common"
+	"github.com/HyperCore-Team/tss-lib/crypto"
+	"github.com/HyperCore-Team/tss-lib/crypto/commitments"
+	"github.com/HyperCore-Team/tss-lib/eddsa/keygen"
+	"github.com/HyperCore-Team/tss-lib/tss"
 )
 
 // round 1 represents round 1 of the signing part of the EDDSA TSS spec
@@ -32,6 +33,12 @@ func (round *round1) Start() *tss.Error {
 	round.started = true
 	round.resetOK()
 
+	round.temp.ssidNonce = new(big.Int).SetUint64(0)
+	var err error
+	round.temp.ssid, err = round.getSSID()
+	if err != nil {
+		return round.WrapError(err)
+	}
 	// 1. select ri
 	ri := common.GetRandomPositiveInt(round.Params().EC().Params().N)
 

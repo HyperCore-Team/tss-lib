@@ -8,6 +8,7 @@ package crypto
 
 import (
 	"bytes"
+	"crypto/ecdsa"
 	"crypto/elliptic"
 	"encoding/binary"
 	"encoding/json"
@@ -17,7 +18,7 @@ import (
 
 	"github.com/decred/dcrd/dcrec/edwards/v2"
 
-	"github.com/binance-chain/tss-lib/tss"
+	"github.com/HyperCore-Team/tss-lib/tss"
 )
 
 // ECPoint convenience helper
@@ -60,8 +61,19 @@ func (p *ECPoint) Add(p1 *ECPoint) (*ECPoint, error) {
 
 func (p *ECPoint) ScalarMult(k *big.Int) *ECPoint {
 	x, y := p.curve.ScalarMult(p.X(), p.Y(), k.Bytes())
-	newP, _ := NewECPoint(p.curve, x, y) // it must be on the curve, no need to check.
+	newP, err := NewECPoint(p.curve, x, y) // it must be on the curve, no need to check.
+	if err != nil {
+		panic(fmt.Errorf("scalar mult to an ecpoint %s", err.Error()))
+	}
 	return newP
+}
+
+func (p *ECPoint) ToECDSAPubKey() *ecdsa.PublicKey {
+	return &ecdsa.PublicKey{
+		Curve: p.curve,
+		X:     p.X(),
+		Y:     p.Y(),
+	}
 }
 
 func (p *ECPoint) IsOnCurve() bool {
@@ -94,7 +106,10 @@ func (p *ECPoint) EightInvEight() *ECPoint {
 
 func ScalarBaseMult(curve elliptic.Curve, k *big.Int) *ECPoint {
 	x, y := curve.ScalarBaseMult(k.Bytes())
-	p, _ := NewECPoint(curve, x, y) // it must be on the curve, no need to check.
+	p, err := NewECPoint(curve, x, y) // it must be on the curve, no need to check.
+	if err != nil {
+		panic(fmt.Errorf("scalar mult to an ecpoint %s", err.Error()))
+	}
 	return p
 }
 

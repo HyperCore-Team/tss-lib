@@ -8,13 +8,15 @@ package signing
 
 import (
 	"crypto/sha512"
+	"math/big"
 
+	"github.com/HyperCore-Team/tss-lib/common"
 	"github.com/agl/ed25519/edwards25519"
 	"github.com/pkg/errors"
 
-	"github.com/binance-chain/tss-lib/crypto"
-	"github.com/binance-chain/tss-lib/crypto/commitments"
-	"github.com/binance-chain/tss-lib/tss"
+	"github.com/HyperCore-Team/tss-lib/crypto"
+	"github.com/HyperCore-Team/tss-lib/crypto/commitments"
+	"github.com/HyperCore-Team/tss-lib/tss"
 )
 
 func (round *round3) Start() *tss.Error {
@@ -38,6 +40,7 @@ func (round *round3) Start() *tss.Error {
 			continue
 		}
 
+		ContextJ := common.AppendBigIntToBytesSlice(round.temp.ssid, big.NewInt(int64(j)))
 		msg := round.temp.signRound2Messages[j]
 		r2msg := msg.Content().(*SignRound2Message)
 		cmtDeCmt := commitments.HashCommitDecommit{C: round.temp.cjs[j], D: r2msg.UnmarshalDeCommitment()}
@@ -58,7 +61,7 @@ func (round *round3) Start() *tss.Error {
 		if err != nil {
 			return round.WrapError(errors.New("failed to unmarshal Rj proof"), Pj)
 		}
-		ok = proof.Verify(Rj)
+		ok = proof.Verify(ContextJ, Rj)
 		if !ok {
 			return round.WrapError(errors.New("failed to prove Rj"), Pj)
 		}
@@ -77,7 +80,7 @@ func (round *round3) Start() *tss.Error {
 	h.Reset()
 	h.Write(encodedR[:])
 	h.Write(encodedPubKey[:])
-	h.Write(round.temp.m)
+	h.Write(round.temp.m.Bytes())
 
 	var lambda [64]byte
 	h.Sum(lambda[:0])

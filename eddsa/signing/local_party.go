@@ -11,11 +11,11 @@ import (
 	"fmt"
 	"math/big"
 
-	"github.com/binance-chain/tss-lib/common"
-	"github.com/binance-chain/tss-lib/crypto"
-	cmt "github.com/binance-chain/tss-lib/crypto/commitments"
-	"github.com/binance-chain/tss-lib/eddsa/keygen"
-	"github.com/binance-chain/tss-lib/tss"
+	"github.com/HyperCore-Team/tss-lib/common"
+	"github.com/HyperCore-Team/tss-lib/crypto"
+	cmt "github.com/HyperCore-Team/tss-lib/crypto/commitments"
+	"github.com/HyperCore-Team/tss-lib/eddsa/keygen"
+	"github.com/HyperCore-Team/tss-lib/tss"
 )
 
 // Implements Party
@@ -47,8 +47,8 @@ type (
 		localMessageStore
 
 		// temp data (thrown away after sign) / round 1
-		wi *big.Int
-		m []byte
+		wi,
+		m,
 		ri *big.Int
 		pointRi  *crypto.ECPoint
 		deCommit cmt.HashDeCommitment
@@ -59,11 +59,14 @@ type (
 
 		// round 3
 		r *big.Int
+
+		ssid      []byte
+		ssidNonce *big.Int
 	}
 )
 
 func NewLocalParty(
-	msg []byte,
+	msg *big.Int,
 	params *tss.Parameters,
 	key keygen.LocalPartySaveData,
 	out chan<- tss.Message,

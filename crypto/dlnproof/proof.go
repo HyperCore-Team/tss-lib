@@ -15,8 +15,8 @@ import (
 	"fmt"
 	"math/big"
 
-	"github.com/binance-chain/tss-lib/common"
-	cmts "github.com/binance-chain/tss-lib/crypto/commitments"
+	"github.com/HyperCore-Team/tss-lib/common"
+	cmts "github.com/HyperCore-Team/tss-lib/crypto/commitments"
 )
 
 const Iterations = 128
@@ -26,6 +26,10 @@ type (
 		Alpha,
 		T [Iterations]*big.Int
 	}
+)
+
+var (
+	one = big.NewInt(1)
 )
 
 func NewDLNProof(h1, h2, x, p, q, N *big.Int) *Proof {
@@ -53,7 +57,33 @@ func (p *Proof) Verify(h1, h2, N *big.Int) bool {
 	if p == nil {
 		return false
 	}
+	if N.Sign() != 1 {
+		return false
+	}
 	modN := common.ModInt(N)
+	h1_ := new(big.Int).Mod(h1, N)
+	if h1_.Cmp(one) != 1 || h1_.Cmp(N) != -1 {
+		return false
+	}
+	h2_ := new(big.Int).Mod(h2, N)
+	if h2_.Cmp(one) != 1 || h2_.Cmp(N) != -1 {
+		return false
+	}
+	if h1_.Cmp(h2_) == 0 {
+		return false
+	}
+	for i := range p.T {
+		a := new(big.Int).Mod(p.T[i], N)
+		if a.Cmp(one) != 1 || a.Cmp(N) != -1 {
+			return false
+		}
+	}
+	for i := range p.Alpha {
+		a := new(big.Int).Mod(p.Alpha[i], N)
+		if a.Cmp(one) != 1 || a.Cmp(N) != -1 {
+			return false
+		}
+	}
 	msg := append([]*big.Int{h1, h2, N}, p.Alpha[:]...)
 	c := common.SHA512_256i(msg...)
 	cIBI := new(big.Int)

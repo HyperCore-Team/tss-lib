@@ -7,13 +7,14 @@
 package keygen
 
 import (
+	"context"
 	"errors"
 	"math/big"
 	"runtime"
 	"time"
 
-	"github.com/binance-chain/tss-lib/common"
-	"github.com/binance-chain/tss-lib/crypto/paillier"
+	"github.com/HyperCore-Team/tss-lib/common"
+	"github.com/HyperCore-Team/tss-lib/crypto/paillier"
 )
 
 const (
@@ -23,12 +24,25 @@ const (
 	safePrimeBitLen = 1024
 	// Ticker for printing log statements while generating primes/modulus
 	logProgressTickInterval = 8 * time.Second
+	// Safe big len using random for ssid
+	SafeBitLen = 1024
 )
 
 // GeneratePreParams finds two safe primes and computes the Paillier secret required for the protocol.
 // This can be a time consuming process so it is recommended to do it out-of-band.
 // If not specified, a concurrency value equal to the number of available CPU cores will be used.
+// If pre-parameters could not be generated before the timeout, an error is returned.
 func GeneratePreParams(timeout time.Duration, optionalConcurrency ...int) (*LocalPreParams, error) {
+	ctx, cancel := context.WithTimeout(context.Background(), timeout)
+	defer cancel()
+	return GeneratePreParamsWithContext(ctx, optionalConcurrency...)
+}
+
+// GeneratePreParams finds two safe primes and computes the Paillier secret required for the protocol.
+// This can be a time consuming process so it is recommended to do it out-of-band.
+// If not specified, a concurrency value equal to the number of available CPU cores will be used.
+// If pre-parameters could not be generated before the context is done, an error is returned.
+func GeneratePreParamsWithContext(ctx context.Context, optionalConcurrency ...int) (*LocalPreParams, error) {
 	var concurrency int
 	if 0 < len(optionalConcurrency) {
 		if 1 < len(optionalConcurrency) {
@@ -51,7 +65,7 @@ func GeneratePreParams(timeout time.Duration, optionalConcurrency ...int) (*Loca
 		common.Logger.Info("generating the Paillier modulus, please wait...")
 		start := time.Now()
 		// more concurrency weight is assigned here because the paillier primes have a requirement of having "large" P-Q
-		PiPaillierSk, _, err := paillier.GenerateKeyPair(paillierModulusLen, timeout, concurrency*2)
+		PiPaillierSk, _, err := paillier.GenerateKeyPair(ctx, paillierModulusLen, concurrency*2)
 		if err != nil {
 			ch <- nil
 			return
@@ -65,7 +79,7 @@ func GeneratePreParams(timeout time.Duration, optionalConcurrency ...int) (*Loca
 		var err error
 		common.Logger.Info("generating the safe primes for the signing proofs, please wait...")
 		start := time.Now()
-		sgps, err := common.GetRandomSafePrimesConcurrent(safePrimeBitLen, 2, timeout, concurrency)
+		sgps, err := common.GetRandomSafePrimesConcurrent(ctx, safePrimeBitLen, 2, concurrency)
 		if err != nil {
 			ch <- nil
 			return

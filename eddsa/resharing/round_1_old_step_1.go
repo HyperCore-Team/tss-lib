@@ -10,12 +10,12 @@ import (
 	"errors"
 	"fmt"
 
-	"github.com/binance-chain/tss-lib/crypto"
-	"github.com/binance-chain/tss-lib/crypto/commitments"
-	"github.com/binance-chain/tss-lib/crypto/vss"
-	"github.com/binance-chain/tss-lib/eddsa/keygen"
-	"github.com/binance-chain/tss-lib/eddsa/signing"
-	"github.com/binance-chain/tss-lib/tss"
+	"github.com/HyperCore-Team/tss-lib/crypto"
+	"github.com/HyperCore-Team/tss-lib/crypto/commitments"
+	"github.com/HyperCore-Team/tss-lib/crypto/vss"
+	"github.com/HyperCore-Team/tss-lib/eddsa/keygen"
+	"github.com/HyperCore-Team/tss-lib/eddsa/signing"
+	"github.com/HyperCore-Team/tss-lib/tss"
 )
 
 // round 1 represents round 1 of the keygen part of the EDDSA TSS spec
@@ -68,7 +68,7 @@ func (round *round1) Start() *tss.Error {
 
 	// 5. "broadcast" C_i to members of the NEW committee
 	r1msg := NewDGRound1Message(
-		round.NewParties().IDs(), round.PartyID(),
+		round.NewParties().IDs().Exclude(round.PartyID()), round.PartyID(),
 		round.input.EDDSAPub, vCmt.C)
 	round.temp.dgRound1Messages[i] = r1msg
 	round.out <- r1msg

@@ -13,9 +13,9 @@ import (
 
 	errorspkg "github.com/pkg/errors"
 
-	"github.com/binance-chain/tss-lib/common"
-	"github.com/binance-chain/tss-lib/crypto/mta"
-	"github.com/binance-chain/tss-lib/tss"
+	"github.com/HyperCore-Team/tss-lib/common"
+	"github.com/HyperCore-Team/tss-lib/crypto/mta"
+	"github.com/HyperCore-Team/tss-lib/tss"
 )
 
 func (round *round3) Start() *tss.Error {
@@ -38,6 +38,7 @@ func (round *round3) Start() *tss.Error {
 		if j == i {
 			continue
 		}
+		ContextJ := append(round.temp.ssid, new(big.Int).SetUint64(uint64(j)).Bytes()...)
 		// Alice_end
 		go func(j int, Pj *tss.PartyID) {
 			defer wg.Done()
@@ -48,6 +49,7 @@ func (round *round3) Start() *tss.Error {
 				return
 			}
 			alphaIj, err := mta.AliceEnd(
+				ContextJ,
 				round.Params().EC(),
 				round.key.PaillierPKs[i],
 				proofBob,
@@ -72,6 +74,7 @@ func (round *round3) Start() *tss.Error {
 				return
 			}
 			uIj, err := mta.AliceEndWC(
+				ContextJ,
 				round.Params().EC(),
 				round.key.PaillierPKs[i],
 				proofBobWC,

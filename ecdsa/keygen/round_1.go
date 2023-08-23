@@ -10,12 +10,12 @@ import (
 	"errors"
 	"math/big"
 
-	"github.com/binance-chain/tss-lib/common"
-	"github.com/binance-chain/tss-lib/crypto"
-	cmts "github.com/binance-chain/tss-lib/crypto/commitments"
-	"github.com/binance-chain/tss-lib/crypto/dlnproof"
-	"github.com/binance-chain/tss-lib/crypto/vss"
-	"github.com/binance-chain/tss-lib/tss"
+	"github.com/HyperCore-Team/tss-lib/common"
+	"github.com/HyperCore-Team/tss-lib/crypto"
+	cmts "github.com/HyperCore-Team/tss-lib/crypto/commitments"
+	"github.com/HyperCore-Team/tss-lib/crypto/dlnproof"
+	"github.com/HyperCore-Team/tss-lib/crypto/vss"
+	"github.com/HyperCore-Team/tss-lib/tss"
 )
 
 var (
@@ -74,7 +74,7 @@ func (round *round1) Start() *tss.Error {
 	} else if round.save.LocalPreParams.ValidateWithProof() {
 		preParams = &round.save.LocalPreParams
 	} else {
-		preParams, err = GeneratePreParams(round.SafePrimeGenTimeout(), 3)
+		preParams, err = GeneratePreParams(round.SafePrimeGenTimeout(), round.Concurrency())
 		if err != nil {
 			return round.WrapError(errors.New("pre-params generation failed"), Pi)
 		}
@@ -100,8 +100,14 @@ func (round *round1) Start() *tss.Error {
 	// and keep in temporary storage:
 	// - VSS Vs
 	// - our set of Shamir shares
+	round.temp.ssidNonce = new(big.Int).SetUint64(0)
 	round.save.ShareID = ids[i]
 	round.temp.vs = vs
+	ssid, err := round.getSSID()
+	if err != nil {
+		return round.WrapError(errors.New("failed to generate ssid"))
+	}
+	round.temp.ssid = ssid
 	round.temp.shares = shares
 
 	// for this P: SAVE de-commitments, paillier keys for round 2
